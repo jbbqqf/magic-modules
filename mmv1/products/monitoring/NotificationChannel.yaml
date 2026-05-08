@@ -40,6 +40,7 @@ id_format: '{{name}}'
 base_url: 'v3/projects/{{project}}/notificationChannels'
 self_link: 'v3/{{name}}'
 update_verb: 'PATCH'
+update_mask: true
 delete_url: 'v3/{{name}}?force={{force_delete}}'
 mutex: 'stackdriver/notifications/{{project}}'
 import_format:
