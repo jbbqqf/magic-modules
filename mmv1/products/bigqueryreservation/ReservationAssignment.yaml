@@ -85,7 +85,10 @@ properties:
   - name: 'jobType'
     type: String
     description: |
-      Types of job, which could be specified when using the reservation. Possible values: JOB_TYPE_UNSPECIFIED, PIPELINE, QUERY, CONTINUOUS
+      Types of job, which could be specified when using the reservation.
+      Possible values: JOB_TYPE_UNSPECIFIED, PIPELINE, QUERY, ML_EXTERNAL,
+      BACKGROUND, CONTINUOUS, BACKGROUND_CHANGE_DATA_CAPTURE,
+      BACKGROUND_COLUMN_METADATA_INDEX, BACKGROUND_SEARCH_INDEX_REFRESH.
     required: true
   - name: 'state'
     type: String
