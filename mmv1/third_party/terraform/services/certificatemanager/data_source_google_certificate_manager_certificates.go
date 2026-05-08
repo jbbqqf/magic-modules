@@ -17,6 +17,11 @@ func DataSourceGoogleCertificateManagerCertificates() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceGoogleCertificateManagerCertificatesRead,
 		Schema: map[string]*schema.Schema{
+			"project": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 			"filter": {
 				Type:     schema.TypeString,
 				Optional: true,
