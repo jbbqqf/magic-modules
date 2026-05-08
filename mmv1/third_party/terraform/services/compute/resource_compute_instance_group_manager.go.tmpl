@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/id"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -96,10 +97,27 @@ func ResourceComputeInstanceGroupManager() *schema.Resource {
 			},
 
 			"name": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: `The name of the instance group manager. Must be 1-63 characters long and comply with RFC1035. Supported characters include lowercase letters, numbers, and hyphens.`,
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"name_prefix"},
+				Description:   `The name of the instance group manager. Must be 1-63 characters long and comply with RFC1035. Supported characters include lowercase letters, numbers, and hyphens. If left blank, Terraform will generate a unique name (or, if name_prefix is set, a name based on that prefix).`,
+			},
+
+			"name_prefix": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"name"},
+				Description:   `Creates a unique name beginning with the specified prefix. Conflicts with name. Max length is 54 characters. Prefixes longer than 37 characters will use a shortened UUID that is more prone to collisions.`,
+				ValidateFunc: func(v interface{}, k string) (ws []string, errors []error) {
+					value := v.(string)
+					if len(value) > 54 {
+						errors = append(errors, fmt.Errorf("%q cannot be longer than 54 characters, name is limited to 63", k))
+					}
+					return
+				},
 			},
 
 			"zone": {
@@ -738,8 +756,25 @@ func resourceComputeInstanceGroupManagerCreate(d *schema.ResourceData, meta inte
 		return err
 	}
 
+	var igmName string
+	if v, ok := d.GetOk("name"); ok {
+		igmName = v.(string)
+	} else if v, ok := d.GetOk("name_prefix"); ok {
+		prefix := v.(string)
+		if len(prefix) > 37 {
+			igmName = tpgresource.ReducedPrefixedUniqueId(prefix)
+		} else {
+			igmName = id.PrefixedUniqueId(prefix)
+		}
+	} else {
+		igmName = id.UniqueId()
+	}
+	if err := d.Set("name", igmName); err != nil {
+		return fmt.Errorf("Error setting computed name: %s", err)
+	}
+
 	insertBody := map[string]interface{}{
-		"name":                        d.Get("name").(string),
+		"name":                        igmName,
 		"description":                 d.Get("description").(string),
 		"baseInstanceName":            d.Get("base_instance_name").(string),
 		"targetSize":                  int64(d.Get("target_size").(int)),
