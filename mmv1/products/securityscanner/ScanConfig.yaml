@@ -82,6 +82,7 @@ properties:
         at_least_one_of:
           - authentication.0.google_account
           - authentication.0.custom_account
+          - authentication.0.iap_credential
         properties:
           - name: username
             type: String
@@ -107,6 +108,7 @@ properties:
         at_least_one_of:
           - authentication.0.google_account
           - authentication.0.custom_account
+          - authentication.0.iap_credential
         properties:
           - name: username
             type: String
@@ -130,6 +132,29 @@ properties:
             description: |
               The login form URL of the website.
             min_version: beta
+      - name: iapCredential
+        type: NestedObject
+        description: |
+          Describes authentication configuration for Identity-Aware-Proxy (IAP).
+        min_version: beta
+        at_least_one_of:
+          - authentication.0.google_account
+          - authentication.0.custom_account
+          - authentication.0.iap_credential
+        properties:
+          - name: iapTestServiceAccountInfo
+            type: NestedObject
+            description: |
+              Authentication configuration when Web-Security-Scanner service account is added
+              in Identity-Aware-Proxy (IAP) access policies.
+            min_version: beta
+            properties:
+              - name: targetAudienceClientId
+                type: String
+                required: true
+                description: |
+                  Describes OAuth2 client id of resources protected by Identity-Aware-Proxy (IAP).
+                min_version: beta
   - name: userAgent
     type: Enum
     default_value: CHROME_LINUX
