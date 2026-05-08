@@ -88,3 +88,37 @@ properties:
     type: Boolean
     description: |
       If this IDP allows the user to sign in
+  - name: 'appleSignInConfig'
+    type: NestedObject
+    description: |
+      Additional configuration options for Sign in with Apple.
+
+      Set this when `idp_id` is `apple.com` or `gc.apple.com`. The classic
+      `client_id` / `client_secret` pair can be left empty for Apple — the
+      Apple-specific identifiers are carried in this block instead.
+    properties:
+      - name: 'codeFlowConfig'
+        type: NestedObject
+        description: |
+          Additional config for Apple's code flow. Required to enable
+          server-side issuance of the Apple client secret JWT.
+        properties:
+          - name: 'teamId'
+            type: String
+            description: |
+              Apple Developer Team ID, e.g. `9XUPYQX2X9`.
+          - name: 'keyId'
+            type: String
+            description: |
+              Key ID for the private key registered in the Apple Developer portal.
+          - name: 'privateKey'
+            type: String
+            description: |
+              The private key (PEM-encoded) used to sign the client secret JWT.
+            sensitive: true
+      - name: 'bundleIds'
+        type: Array
+        description: |
+          The list of Bundle IDs usable by this project (e.g. iOS bundle identifiers).
+        item_type:
+          type: String
