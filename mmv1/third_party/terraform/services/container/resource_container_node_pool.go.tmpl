@@ -514,7 +514,20 @@ var schemaNodePool = map[string]*schema.Schema{
 		Optional:    true,
 		Computed:    true,
 		ForceNew:    true,
-		Description: `Creates a unique name for the node pool beginning with the specified prefix. Conflicts with name.`,
+		Description: `Creates a unique name for the node pool beginning with the specified prefix. Conflicts with name. The maximum length of the prefix is 31 characters; prefixes longer than 14 characters use a shortened suffix that is more prone to collisions.`,
+		ValidateFunc: func(v interface{}, k string) (ws []string, errors []error) {
+			// Node pool names are limited to 40 characters by GKE. The unique
+			// suffix appended by id.PrefixedUniqueId is 26 characters, while
+			// tpgresource.ReducedPrefixedUniqueId produces a 9-character
+			// suffix. Cap the prefix at 31 (40 - 9) so that callers cannot
+			// produce a name that the API will reject at create time.
+			value := v.(string)
+			if len(value) > 31 {
+				errors = append(errors, fmt.Errorf(
+					"%q cannot be longer than 31 characters (node pool names are limited to 40)", k))
+			}
+			return
+		},
 	},
 
 	"node_config": schemaNodeConfig(),
@@ -1140,7 +1153,17 @@ func expandNodePool(d *schema.ResourceData, prefix string) (*container.NodePool,
 		}
 		name = v.(string)
 	} else if v, ok := d.GetOk(prefix + "name_prefix"); ok {
-		name = id.PrefixedUniqueId(v.(string))
+		// id.PrefixedUniqueId appends a 26-character suffix; the GKE node
+		// pool name limit is 40, so for prefixes longer than 14 characters
+		// fall back to the shortened (9-character) suffix variant. The
+		// schema validator caps the prefix at 31 characters, so the result
+		// always fits.
+		p := v.(string)
+		if len(p) > 14 {
+			name = tpgresource.ReducedPrefixedUniqueId(p)
+		} else {
+			name = id.PrefixedUniqueId(p)
+		}
 	} else {
 		name = id.UniqueId()
 	}
