@@ -259,6 +259,60 @@ func ResourceDataflowFlexTemplateJob() *schema.Resource {
 				Default:     false,
 				Description: `If true, treat DRAINING and CANCELLING as terminal job states and do not wait for further changes before removing from terraform state and moving on. WARNING: this will lead to job name conflicts if you do not ensure that the job names are different, e.g. by embedding a release ID or by using a random_id.`,
 			},
+
+			"disk_size_gb": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Computed:    true,
+				Description: `Worker disk size, in gigabytes. Maps to FlexTemplateRuntimeEnvironment.diskSizeGb.`,
+			},
+
+			"flexrs_goal": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				Description:  `Set FlexRS goal for the job. Possible values are FLEXRS_UNSPECIFIED, FLEXRS_SPEED_OPTIMIZED, FLEXRS_COST_OPTIMIZED.`,
+				ValidateFunc: validation.StringInSlice([]string{"FLEXRS_UNSPECIFIED", "FLEXRS_SPEED_OPTIMIZED", "FLEXRS_COST_OPTIMIZED"}, false),
+			},
+
+			"streaming_mode": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				Description:  `Specifies the Streaming Engine message processing guarantees. Possible values are STREAMING_MODE_UNSPECIFIED, STREAMING_MODE_EXACTLY_ONCE, STREAMING_MODE_AT_LEAST_ONCE.`,
+				ValidateFunc: validation.StringInSlice([]string{"STREAMING_MODE_UNSPECIFIED", "STREAMING_MODE_EXACTLY_ONCE", "STREAMING_MODE_AT_LEAST_ONCE"}, false),
+			},
+
+			"worker_region": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: `The Compute Engine region in which worker processing should occur. Mutually exclusive with worker_zone.`,
+			},
+
+			"worker_zone": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: `The Compute Engine zone in which worker processing should occur. Mutually exclusive with worker_region.`,
+			},
+
+			"dump_heap_on_oom": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: `If true, save a heap dump before the worker JVM is terminated due to OOM.`,
+			},
+
+			"save_heap_dumps_to_gcs_path": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: `Cloud Storage bucket (directory) to upload heap dumps to. Implies dump_heap_on_oom = true.`,
+			},
+
+			"enable_launcher_vm_serial_port_logging": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: `If true, enable serial port logging on the launcher VM.`,
+			},
 		},
 		UseJSONNumber: true,
 	}
@@ -394,24 +448,57 @@ func resourceDataflowFlexJobSetupEnv(d *schema.ResourceData, config *transport_t
 
 	launcherMachineType, updatedParameters := dataflowFlexJobTypeTransferVar("launcher_machine_type", "launcherMachineType", updatedParameters, d)
 
+	flexrsGoal, updatedParameters := dataflowFlexJobTypeTransferVar("flexrs_goal", "flexrsGoal", updatedParameters, d)
+
+	streamingMode, updatedParameters := dataflowFlexJobTypeTransferVar("streaming_mode", "streamingMode", updatedParameters, d)
+
+	workerRegion, updatedParameters := dataflowFlexJobTypeTransferVar("worker_region", "workerRegion", updatedParameters, d)
+
+	workerZone, updatedParameters := dataflowFlexJobTypeTransferVar("worker_zone", "workerZone", updatedParameters, d)
+
+	saveHeapDumpsToGcsPath, updatedParameters := dataflowFlexJobTypeTransferVar("save_heap_dumps_to_gcs_path", "saveHeapDumpsToGcsPath", updatedParameters, d)
+
+	var diskSizeGb int64
+	if v, ok := d.GetOk("disk_size_gb"); ok {
+		diskSizeGb = int64(v.(int))
+	}
+
+	var dumpHeapOnOom bool
+	if v, ok := d.GetOk("dump_heap_on_oom"); ok {
+		dumpHeapOnOom = v.(bool)
+	}
+
+	var enableLauncherVmSerialPortLogging bool
+	if v, ok := d.GetOk("enable_launcher_vm_serial_port_logging"); ok {
+		enableLauncherVmSerialPortLogging = v.(bool)
+	}
+
 	env := dataflow.FlexTemplateRuntimeEnvironment{
-		AdditionalUserLabels:      tpgresource.ExpandStringMap(d, "effective_labels"),
-		AutoscalingAlgorithm:      autoscalingAlgorithm,
-		NumWorkers:                int64(numWorkers),
-		MaxWorkers:                int64(maxNumWorkers),
-		Network:                   network,
-		ServiceAccountEmail:       serviceAccountEmail,
-		Subnetwork:                subnetwork,
-		TempLocation:              tempLocation,
-		StagingLocation:           stagingLocation,
-		MachineType:               machineType,
-		KmsKeyName:                kmsKeyName,
-		IpConfiguration:           ipConfiguration,
-		EnableStreamingEngine:     enableStreamingEngine,
-		AdditionalExperiments:     additionalExperiments,
-		AdditionalPipelineOptions: additionalPipelineOptions,
-		SdkContainerImage:         sdkContainerImage,
-		LauncherMachineType:       launcherMachineType,
+		AdditionalUserLabels:              tpgresource.ExpandStringMap(d, "effective_labels"),
+		AutoscalingAlgorithm:              autoscalingAlgorithm,
+		NumWorkers:                        int64(numWorkers),
+		MaxWorkers:                        int64(maxNumWorkers),
+		Network:                           network,
+		ServiceAccountEmail:               serviceAccountEmail,
+		Subnetwork:                        subnetwork,
+		TempLocation:                      tempLocation,
+		StagingLocation:                   stagingLocation,
+		MachineType:                       machineType,
+		KmsKeyName:                        kmsKeyName,
+		IpConfiguration:                   ipConfiguration,
+		EnableStreamingEngine:             enableStreamingEngine,
+		AdditionalExperiments:             additionalExperiments,
+		AdditionalPipelineOptions:         additionalPipelineOptions,
+		SdkContainerImage:                 sdkContainerImage,
+		LauncherMachineType:               launcherMachineType,
+		DiskSizeGb:                        diskSizeGb,
+		FlexrsGoal:                        flexrsGoal,
+		StreamingMode:                     streamingMode,
+		WorkerRegion:                      workerRegion,
+		WorkerZone:                        workerZone,
+		DumpHeapOnOom:                     dumpHeapOnOom,
+		SaveHeapDumpsToGcsPath:            saveHeapDumpsToGcsPath,
+		EnableLauncherVmSerialPortLogging: enableLauncherVmSerialPortLogging,
 	}
 	return env, updatedParameters, nil
 }
