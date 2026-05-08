@@ -15,10 +15,17 @@ import (
 
 var loggingProjectBucketConfigSchema = map[string]*schema.Schema{
 	"project": {
-		Type:        schema.TypeString,
-		Required:    true,
-		ForceNew:    true,
-		Description: `The parent project that contains the logging bucket.`,
+		Type:     schema.TypeString,
+		Required: true,
+		ForceNew: true,
+		// Accept both "{project}" and "projects/{project}" forms. The import
+		// path stores "projects/{project}" to preserve compatibility with
+		// existing state, but users typically configure the bare project ID.
+		// Without this DiffSuppressFunc, importing an existing bucket whose
+		// config uses the bare form would trigger a destroy-and-recreate
+		// plan — see issue hashicorp/terraform-provider-google#19137.
+		DiffSuppressFunc: compareLoggingProjectBucketProjectField,
+		Description:      `The parent project that contains the logging bucket.`,
 	},
 	"name": {
 		Type:        schema.TypeString,
@@ -129,6 +136,15 @@ For example: jsonPayload.request.status`,
 			},
 		},
 	},
+}
+
+// compareLoggingProjectBucketProjectField returns true when the old and new
+// values of the `project` field refer to the same project, regardless of
+// whether either side uses the bare project id ("my-proj") or the API form
+// ("projects/my-proj"). This avoids a destroy/recreate plan when importing
+// an existing bucket — see issue #19137.
+func compareLoggingProjectBucketProjectField(_, old, new string, _ *schema.ResourceData) bool {
+	return strings.TrimPrefix(old, "projects/") == strings.TrimPrefix(new, "projects/")
 }
 
 func projectBucketConfigID(d *schema.ResourceData, config *transport_tpg.Config) (string, error) {
