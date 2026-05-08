@@ -26,14 +26,35 @@ func removeComputedKeys(old map[string]interface{}, new map[string]interface{}) 
 		}
 
 		if reflect.ValueOf(v).Kind() == reflect.Map {
-			old[k] = removeComputedKeys(v.(map[string]interface{}), new[k].(map[string]interface{}))
+			newChild, ok := new[k].(map[string]interface{})
+			if !ok {
+				continue
+			}
+			oldChild, ok := v.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			old[k] = removeComputedKeys(oldChild, newChild)
 			continue
 		}
 
 		if reflect.ValueOf(v).Kind() == reflect.Slice {
-			for i, j := range v.([]interface{}) {
-				if reflect.ValueOf(j).Kind() == reflect.Map && len(new[k].([]interface{})) > i {
-					old[k].([]interface{})[i] = removeComputedKeys(j.(map[string]interface{}), new[k].([]interface{})[i].(map[string]interface{}))
+			oldSlice, ok := v.([]interface{})
+			if !ok {
+				continue
+			}
+			newSlice, ok := new[k].([]interface{})
+			if !ok {
+				continue
+			}
+			for i, j := range oldSlice {
+				if i >= len(newSlice) {
+					break
+				}
+				oldChild, oldOk := j.(map[string]interface{})
+				newChild, newOk := newSlice[i].(map[string]interface{})
+				if oldOk && newOk {
+					oldSlice[i] = removeComputedKeys(oldChild, newChild)
 				}
 			}
 			continue
@@ -41,6 +62,35 @@ func removeComputedKeys(old map[string]interface{}, new map[string]interface{}) 
 	}
 
 	return old
+}
+
+// stripEmptyContainers recursively removes keys whose value is an empty map ({})
+// or an empty slice ([]). The Monitoring Dashboard API drops these on
+// round-trip (the GET response omits them), so a configuration that explicitly
+// includes them creates a permanent diff against state. Callers normalize
+// both old and new with this helper before comparing.
+func stripEmptyContainers(m map[string]interface{}) map[string]interface{} {
+	for k, v := range m {
+		switch vv := v.(type) {
+		case map[string]interface{}:
+			if len(vv) == 0 {
+				delete(m, k)
+				continue
+			}
+			m[k] = stripEmptyContainers(vv)
+		case []interface{}:
+			if len(vv) == 0 {
+				delete(m, k)
+				continue
+			}
+			for i, item := range vv {
+				if child, ok := item.(map[string]interface{}); ok {
+					vv[i] = stripEmptyContainers(child)
+				}
+			}
+		}
+	}
+	return m
 }
 
 func monitoringDashboardDiffSuppress(k, old, new string, d *schema.ResourceData) bool {
@@ -53,6 +103,8 @@ func monitoringDashboardDiffSuppress(k, old, new string, d *schema.ResourceData)
 		return false
 	}
 
+	oldMap = stripEmptyContainers(oldMap)
+	newMap = stripEmptyContainers(newMap)
 	oldMap = removeComputedKeys(oldMap, newMap)
 	return reflect.DeepEqual(oldMap, newMap)
 }
