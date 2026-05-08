@@ -80,3 +80,55 @@ properties:
             type: Boolean
             description: |
               When true, end users cannot delete their account on the associated project through any of our API methods.
+  - name: 'mfaConfig'
+    type: NestedObject
+    description: |
+      Configuration for this tenant's multi-factor authentication, including whether
+      it is active and what factors can be used as a second factor.
+    default_from_api: true
+    properties:
+      - name: 'state'
+        type: Enum
+        description: |
+          Whether MultiFactor Authentication has been enabled for this tenant.
+        default_from_api: true
+        enum_values:
+          - 'DISABLED'
+          - 'ENABLED'
+          - 'MANDATORY'
+      - name: 'enabledProviders'
+        type: Array
+        description: |
+          A list of usable second factors for this tenant.
+        item_type:
+          type: Enum
+          description: |
+            Second-factor provider type.
+          enum_values:
+            - 'PHONE_SMS'
+      - name: 'providerConfigs'
+        type: Array
+        description: |
+          A list of usable second factors for this tenant along with their configurations.
+          This field does not support phone based MFA, for that use the 'enabledProviders' field.
+        item_type:
+          type: NestedObject
+          properties:
+            - name: 'state'
+              type: Enum
+              description: |
+                Whether MultiFactor Authentication has been enabled for this tenant.
+              default_from_api: true
+              enum_values:
+                - 'DISABLED'
+                - 'ENABLED'
+                - 'MANDATORY'
+            - name: 'totpProviderConfig'
+              type: NestedObject
+              description: |
+                TOTP MFA provider config for this tenant.
+              properties:
+                - name: 'adjacentIntervals'
+                  type: Integer
+                  description: |
+                    The allowed number of adjacent intervals that will be used for verification to avoid clock skew.
