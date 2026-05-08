@@ -16,8 +16,10 @@ func DataSourceGoogleComputeNetwork() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ExactlyOneOf: []string{"name", "self_link"},
 			},
 
 			"description": {
@@ -53,13 +55,16 @@ func DataSourceGoogleComputeNetwork() *schema.Resource {
 			},
 
 			"self_link": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ExactlyOneOf: []string{"name", "self_link"},
 			},
 
 			"project": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 
 			"subnetworks_self_links": {
@@ -78,17 +83,37 @@ func dataSourceGoogleComputeNetworkRead(d *schema.ResourceData, meta interface{}
 		return err
 	}
 
-	project, err := tpgresource.GetProject(d, config)
-	if err != nil {
-		return err
+	var project, name string
+	if v, ok := d.GetOk("self_link"); ok {
+		// self_link can be a full URL, a relative path, or a partial form like
+		// projects/{{project}}/global/networks/{{name}}. ParseNetworkFieldValue
+		// handles all these and resolves the project from the link itself when
+		// present, falling back to the data source's project / provider project.
+		parsed, err := tpgresource.ParseNetworkFieldValue(v.(string), d, config)
+		if err != nil {
+			return fmt.Errorf("Error parsing self_link %q: %s", v.(string), err)
+		}
+		project = parsed.Project
+		name = parsed.Name
+	} else {
+		project, err = tpgresource.GetProject(d, config)
+		if err != nil {
+			return err
+		}
+		name = d.Get("name").(string)
 	}
-	name := d.Get("name").(string)
 
 	id := fmt.Sprintf("projects/%s/global/networks/%s", project, name)
 
 	network, err := NewClient(config, userAgent).Networks.Get(project, name).Do()
 	if err != nil {
 		return transport_tpg.HandleDataSourceNotFoundError(err, d, fmt.Sprintf("Network Not Found : %s", name), id)
+	}
+	if err := d.Set("project", project); err != nil {
+		return fmt.Errorf("Error setting project: %s", err)
+	}
+	if err := d.Set("name", name); err != nil {
+		return fmt.Errorf("Error setting name: %s", err)
 	}
 	if err := d.Set("gateway_ipv4", network.GatewayIPv4); err != nil {
 		return fmt.Errorf("Error setting gateway_ipv4: %s", err)
