@@ -200,6 +200,11 @@ properties:
     type: Boolean
     description: |
       When set to true, no runs are scheduled for a given transfer.
+  - name: 'labels'
+    type: KeyValueLabels
+    description: |
+      The labels associated with this transfer configuration. You can use these
+      to organize and group your transfer configurations.
   - name: 'params'
     type: KeyValuePairs
     description: |

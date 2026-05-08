@@ -20,6 +20,9 @@ resource "google_bigquery_data_transfer_config" "{{$.PrimaryResourceId}}" {
     write_disposition               = "WRITE_APPEND"
     query                           = "SELECT name FROM tabl WHERE x = 'y'"
   }
+  labels = {
+    env = "test"
+  }
 }
 
 resource "google_bigquery_dataset" "my_dataset" {
