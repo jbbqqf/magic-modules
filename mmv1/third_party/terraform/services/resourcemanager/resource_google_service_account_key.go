@@ -19,6 +19,7 @@ func ResourceGoogleServiceAccountKey() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceGoogleServiceAccountKeyCreate,
 		Read:   resourceGoogleServiceAccountKeyRead,
+		Update: resourceGoogleServiceAccountKeyUpdate,
 		Delete: resourceGoogleServiceAccountKeyDelete,
 		Schema: map[string]*schema.Schema{
 			// Required
@@ -63,6 +64,12 @@ func ResourceGoogleServiceAccountKey() *schema.Resource {
 				Type:        schema.TypeMap,
 				Optional:    true,
 				ForceNew:    true,
+			},
+			"disabled": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: `Whether the service account key is disabled. Toggling this value calls the IAM serviceAccounts.keys.disable / .enable APIs and is the recommended way to deactivate a key without recreating it (compromised-key rotation, scheduled rotation, etc.).`,
 			},
 			// Computed
 			"name": {
@@ -153,6 +160,16 @@ func resourceGoogleServiceAccountKeyCreate(d *schema.ResourceData, meta interfac
 	// likelihood of eventual consistency failures.
 	time.Sleep(10 * time.Second)
 
+	if d.Get("disabled").(bool) {
+		_, err = iambeta.NewClient(config, userAgent).Projects.ServiceAccounts.Keys.Disable(d.Id(), &iam.DisableServiceAccountKeyRequest{}).Do()
+		if err != nil {
+			return fmt.Errorf("Error disabling newly-created service account key %q: %s", d.Id(), err)
+		}
+		// Disable can be eventually consistent against an immediate Read. Wait
+		// briefly so the subsequent Read sees disabled=true.
+		time.Sleep(5 * time.Second)
+	}
+
 	return resourceGoogleServiceAccountKeyRead(d, meta)
 }
 
@@ -191,7 +208,33 @@ func resourceGoogleServiceAccountKeyRead(d *schema.ResourceData, meta interface{
 	if err := d.Set("public_key", sak.PublicKeyData); err != nil {
 		return fmt.Errorf("Error setting public_key: %s", err)
 	}
+	if err := d.Set("disabled", sak.Disabled); err != nil {
+		return fmt.Errorf("Error setting disabled: %s", err)
+	}
 	return nil
+}
+
+func resourceGoogleServiceAccountKeyUpdate(d *schema.ResourceData, meta interface{}) error {
+	config := meta.(*transport_tpg.Config)
+	userAgent, err := tpgresource.GenerateUserAgentString(d, config.UserAgent)
+	if err != nil {
+		return err
+	}
+
+	if d.HasChange("disabled") {
+		client := iambeta.NewClient(config, userAgent).Projects.ServiceAccounts.Keys
+		if d.Get("disabled").(bool) {
+			if _, err := client.Disable(d.Id(), &iam.DisableServiceAccountKeyRequest{}).Do(); err != nil {
+				return fmt.Errorf("Error disabling service account key %q: %s", d.Id(), err)
+			}
+		} else {
+			if _, err := client.Enable(d.Id(), &iam.EnableServiceAccountKeyRequest{}).Do(); err != nil {
+				return fmt.Errorf("Error enabling service account key %q: %s", d.Id(), err)
+			}
+		}
+	}
+
+	return resourceGoogleServiceAccountKeyRead(d, meta)
 }
 
 func resourceGoogleServiceAccountKeyDelete(d *schema.ResourceData, meta interface{}) error {
