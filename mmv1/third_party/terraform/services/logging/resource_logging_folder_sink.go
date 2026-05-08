@@ -44,6 +44,11 @@ func ResourceLoggingFolderSink() *schema.Resource {
 		Default:     false,
 		Description: `Whether or not to intercept logs from child projects. If true, matching logs will not match with sinks in child resources, except _Required sinks. This sink will be visible to child resources when listing sinks.`,
 	}
+	schm.Schema["custom_writer_identity"] = &schema.Schema{
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: `A service account provided by the caller that will be used to write the log entries. The format must be serviceAccount:some@email. This field can only be specified if you are routing logs to a destination outside this sink's folder. If not specified, a Logging service account will automatically be generated.`,
+	}
 
 	return schm
 }
@@ -59,9 +64,15 @@ func resourceLoggingFolderSinkCreate(d *schema.ResourceData, meta interface{}) e
 	id, sink := expandResourceLoggingSink(d, "folders", folder)
 	sink.IncludeChildren = d.Get("include_children").(bool)
 	sink.InterceptChildren = d.Get("intercept_children").(bool)
+	customWriterIdentity := d.Get("custom_writer_identity").(string)
 
 	// The API will reject any requests that don't explicitly set 'uniqueWriterIdentity' to true.
-	_, err = NewClient(config, userAgent).Folders.Sinks.Create(id.parent(), sink).UniqueWriterIdentity(true).Do()
+	folderSinkCreateRequest := NewClient(config, userAgent).Folders.Sinks.Create(id.parent(), sink).UniqueWriterIdentity(true)
+	if customWriterIdentity != "" {
+		folderSinkCreateRequest = folderSinkCreateRequest.CustomWriterIdentity(customWriterIdentity)
+	}
+
+	_, err = folderSinkCreateRequest.Do()
 	if err != nil {
 		return err
 	}
@@ -105,10 +116,16 @@ func resourceLoggingFolderSinkUpdate(d *schema.ResourceData, meta interface{}) e
 	}
 
 	sink, updateMask := expandResourceLoggingSinkForUpdate(d)
+	customWriterIdentity := d.Get("custom_writer_identity").(string)
 
 	// The API will reject any requests that don't explicitly set 'uniqueWriterIdentity' to true.
-	_, err = NewClient(config, userAgent).Folders.Sinks.Patch(d.Id(), sink).
-		UpdateMask(updateMask).UniqueWriterIdentity(true).Do()
+	folderSinkUpdateRequest := NewClient(config, userAgent).Folders.Sinks.Patch(d.Id(), sink).
+		UpdateMask(updateMask).UniqueWriterIdentity(true)
+	if customWriterIdentity != "" {
+		folderSinkUpdateRequest = folderSinkUpdateRequest.CustomWriterIdentity(customWriterIdentity)
+	}
+
+	_, err = folderSinkUpdateRequest.Do()
 	if err != nil {
 		return err
 	}
