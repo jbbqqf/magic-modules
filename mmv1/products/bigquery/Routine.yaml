@@ -47,6 +47,11 @@ examples:
     vars:
       dataset_id: 'dataset_id'
       routine_id: 'routine_id'
+  - name: 'bigquery_routine_udaf'
+    primary_resource_id: 'sproc'
+    vars:
+      dataset_id: 'dataset_id'
+      routine_id: 'routine_id'
   - name: 'bigquery_routine_pyspark'
     primary_resource_id: 'pyspark'
     vars:
@@ -114,6 +119,7 @@ properties:
       - 'SCALAR_FUNCTION'
       - 'PROCEDURE'
       - 'TABLE_VALUED_FUNCTION'
+      - 'AGGREGATE_FUNCTION'
   - name: 'creationTime'
     type: Integer
     description: |
