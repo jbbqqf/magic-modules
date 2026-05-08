@@ -1,3 +1,6 @@
+if d.Get("deletion_protection").(bool) {
+    return fmt.Errorf("cannot destroy google_sql_database %q: deletion_protection is enabled. Set deletion_protection to false and run `terraform apply` before destroying.", d.Id())
+}
 if deletionPolicy := d.Get("deletion_policy"); deletionPolicy == "ABANDON" {
     // Allows for database to be abandoned without deletion to avoid deletion failing
     // for Postgres databases in some circumstances due to existing SQL users
