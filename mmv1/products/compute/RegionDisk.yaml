@@ -451,6 +451,27 @@ properties:
       description: 'An applicable license URI'
       resource: 'License'
       imports: 'selfLink'
+  - name: 'resourcePolicies'
+    type: Array
+    description: |
+      Resource policies applied to this disk for automatic snapshot creations.
+
+      ~>**NOTE** This value does not support updating the
+      resource policy, as resource policies can not be updated more than
+      one at a time. Use
+      [`google_compute_region_disk_resource_policy_attachment`](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_region_disk_resource_policy_attachment)
+      to allow for updating the resource policy attached to the disk.
+    min_version: 'beta'
+    default_from_api: true
+    custom_expand: 'templates/terraform/custom_expand/array_resourceref_with_validation.go.tmpl'
+    item_type:
+      name: 'resourcePolicy'
+      type: ResourceRef
+      description:
+        'A resource policy applied to this disk for automatic snapshot
+        creations.'
+      resource: 'ResourcePolicy'
+      imports: 'selfLink'
   - name: 'accessMode'
     type: String
     description: |
