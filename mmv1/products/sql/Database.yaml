@@ -77,6 +77,16 @@ virtual_fields:
       values are: "ABANDON", "DELETE". Defaults to "DELETE".
     type: String
     default_value: "DELETE"
+  - name: 'deletion_protection'
+    description: |
+      Whether Terraform will be prevented from destroying the database. Defaults to false.
+      When set to true, the database cannot be destroyed via `terraform destroy` or by
+      removing the resource from configuration; the operation will fail unless this field
+      is first set to false in Terraform state. Note: this is a Terraform-side guard only;
+      it does not propagate to the Cloud SQL API and is unrelated to the instance-level
+      `deletion_protection` field on `google_sql_database_instance`.
+    type: Boolean
+    default_value: false
 parameters:
   - name: 'instance'
     type: String
