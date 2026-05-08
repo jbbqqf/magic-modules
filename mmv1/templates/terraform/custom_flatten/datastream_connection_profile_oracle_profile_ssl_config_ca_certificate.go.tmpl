@@ -10,30 +10,7 @@
 	See the License for the specific language governing permissions and
 	limitations under the License.
 */ -}}
+{{/* Workaround: API treats caCertificate as input-only and never returns it. */}}
 func flatten{{$.GetPrefix}}{{$.TitlelizeProperty}}(v interface{}, d *schema.ResourceData, config *transport_tpg.Config) interface{} {
-	if v == nil {
-		return nil
-	}
-	original := v.(map[string]interface{})
-	if len(original) == 0 {
-		return nil
-	}
-
-	password := map[string]interface{}{
-		// The API redacts the plaintext on read, so we keep the value from
-		// state to avoid a permadiff.
-		"plaintext": d.Get("configuration.0.authentication.0.username_password.0.password.0.plaintext"),
-	}
-	if originalPassword, ok := original["password"].(map[string]interface{}); ok {
-		if secretType, ok := originalPassword["secretType"]; ok {
-			password["secret_type"] = secretType
-		}
-	}
-
-	return []interface{}{
-		map[string]interface{}{
-			"username": original["username"],
-			"password": []interface{}{password},
-		},
-	}
+	return d.Get("oracle_profile.0.oracle_ssl_config.0.ca_certificate")
 }
