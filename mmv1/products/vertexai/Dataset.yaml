@@ -98,3 +98,18 @@ properties:
       Points to a YAML file stored on Google Cloud Storage describing additional information about the Dataset. The schema is defined as an OpenAPI 3.0.2 Schema Object. The schema files that can be used here are found in gs://google-cloud-aiplatform/schema/dataset/metadata/.
     required: true
     immutable: true
+  - name: 'metadata'
+    type: String
+    description: |
+      The metadata payload that conforms to the schema referenced by `metadataSchemaUri`, as a JSON-encoded string.
+      For tabular datasets this is typically used to provide an `inputConfig` (BigQuery URI or GCS source). The
+      structure must match the schema at the schema URI. Supplying values here lets Terraform fully describe a
+      Dataset whose contents are bound to an external data source — without this field the resource can only be
+      created empty and populated out-of-band.
+    immutable: true
+    default_from_api: true
+    state_func: 'func(v interface{}) string { s, _ := structure.NormalizeJsonString(v); return s }'
+    custom_flatten: 'templates/terraform/custom_flatten/json_schema.tmpl'
+    custom_expand: 'templates/terraform/custom_expand/json_schema.tmpl'
+    validation:
+      function: 'validation.StringIsJSON'
