@@ -59,7 +59,6 @@ properties:
   - name: 'description'
     type: String
     description: 'An optional description of this resource.'
-    immutable: true
   - name: 'name'
     type: String
     description: |
