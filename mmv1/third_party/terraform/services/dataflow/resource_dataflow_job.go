@@ -237,6 +237,12 @@ func ResourceDataflowJob() *schema.Resource {
 				Description: `The machine type to use for the job.`,
 			},
 
+			"disk_size_gb": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: `The disk size, in gigabytes, to use on each remote Compute Engine worker instance.`,
+			},
+
 			"kms_key_name": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -645,6 +651,7 @@ func resourceDataflowJobSetupEnv(d *schema.ResourceData, config *transport_tpg.C
 		Subnetwork:            d.Get("subnetwork").(string),
 		TempLocation:          d.Get("temp_gcs_location").(string),
 		MachineType:           d.Get("machine_type").(string),
+		DiskSizeGb:            int64(d.Get("disk_size_gb").(int)),
 		KmsKeyName:            d.Get("kms_key_name").(string),
 		IpConfiguration:       d.Get("ip_configuration").(string),
 		EnableStreamingEngine: d.Get("enable_streaming_engine").(bool),
