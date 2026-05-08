@@ -697,6 +697,11 @@ properties:
                 at_least_one_of:
                   - 'configuration.0.load.0.parquet_options.0.enum_as_string'
                   - 'configuration.0.load.0.parquet_options.0.enable_list_inference'
+          - name: 'useAvroLogicalTypes'
+            type: Boolean
+            description: |
+              If sourceFormat is set to "AVRO", indicates whether to interpret logical types as the corresponding BigQuery data type
+              (for example, TIMESTAMP), instead of using the raw type (for example, INTEGER).
       - name: 'copy'
         type: NestedObject
         description: 'Copies a table.'
