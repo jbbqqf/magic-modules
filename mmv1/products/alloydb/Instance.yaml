@@ -470,12 +470,16 @@ properties:
               description: 'CIDR range for one authorized network of the instance.'
       - name: 'enablePublicIp'
         type: Boolean
+        default_value: false
+        custom_flatten: 'templates/terraform/custom_flatten/default_if_empty.tmpl'
         description: |
           Enabling public ip for the instance. If a user wishes to disable this,
           please also clear the list of the authorized external networks set on
           the same instance.
       - name: 'enableOutboundPublicIp'
         type: Boolean
+        default_value: false
+        custom_flatten: 'templates/terraform/custom_flatten/default_if_empty.tmpl'
         description: |
           Enabling outbound public ip for the instance.
       - name: 'allocatedIpRangeOverride'
