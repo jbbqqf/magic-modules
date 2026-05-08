@@ -400,6 +400,7 @@ properties:
             required: true
           - name: 'audience'
             type: String
+            default_from_api: true
             description: |
               Audience to be used when generating OIDC token. If not specified,
               the URI specified in target will be used.
