@@ -119,10 +119,18 @@ func resourceComputeSharedVpcServiceProjectRead(d *schema.ResourceData, meta int
 		return nil
 	}
 
+	// associatedHostProject.Name is the host project's ID. The user may have set
+	// host_project to either the project ID or the project number; both are valid
+	// inputs to EnableXpnResource. When they differ, resolve the configured
+	// host_project to its canonical ID before declaring the binding stale.
+	// See https://github.com/hashicorp/terraform-provider-google/issues/19175.
 	if hostProject != associatedHostProject.Name {
-		log.Printf("[WARN] Removing shared VPC service. Expected associated host project to be '%s', got '%s'", hostProject, associatedHostProject.Name)
-		d.SetId("")
-		return nil
+		hostProjectFromConfig, hostErr := NewClient(config, userAgent).Projects.Get(hostProject).Do()
+		if hostErr != nil || hostProjectFromConfig == nil || hostProjectFromConfig.Name != associatedHostProject.Name {
+			log.Printf("[WARN] Removing shared VPC service. Expected associated host project to be '%s', got '%s'", hostProject, associatedHostProject.Name)
+			d.SetId("")
+			return nil
+		}
 	}
 
 	if err := d.Set("host_project", hostProject); err != nil {
