@@ -156,6 +156,172 @@ properties:
           enum_values:
             - 'ENFORCED_BLOCK_AND_AUDIT_LOG'
             - 'DRYRUN_AUDIT_LOG_ONLY'
+  - name: 'kubernetesNamespaceAdmissionRules'
+    type: Map
+    description: |
+      Optional. Per-Kubernetes-namespace admission rules. The key is the
+      Kubernetes namespace spec, in the format `[a-z.-]+`, e.g.
+      `some-namespace`. An admission rule specifies either that all container
+      images used in a pod creation request must be attested to by one or more
+      attestors, that all pod creations will be allowed, or that all pod
+      creations will be denied.
+    is_set: true
+    set_hash_func: |-
+      func(v interface{}) int {
+        raw := v.(map[string]interface{})
+        copy := make((map[string]interface{}))
+        for key, value := range raw {
+          copy[key] = value
+        }
+        at := copy["require_attestations_by"].(*schema.Set)
+        if at != nil {
+          t := tpgresource.ConvertAndMapStringArr(at.List(), tpgresource.GetResourceNameFromSelfLink)
+          copy["require_attestations_by"] = schema.NewSet(tpgresource.SelfLinkNameHash, tpgresource.ConvertStringArrToInterface(t))
+        }
+        var buf bytes.Buffer
+        schema.SerializeResourceForHash(&buf, copy, ResourceBinaryAuthorizationPolicy().Schema["kubernetes_namespace_admission_rules"].Elem.(*schema.Resource))
+        return tpgresource.Hashcode(buf.String())
+      }
+    key_name: 'namespace'
+    value_type:
+      type: NestedObject
+      properties:
+        - name: 'evaluationMode'
+          type: Enum
+          description: How this admission rule will be evaluated.
+          required: true
+          enum_values:
+            - 'ALWAYS_ALLOW'
+            - 'REQUIRE_ATTESTATION'
+            - 'ALWAYS_DENY'
+        - name: 'requireAttestationsBy'
+          type: Array
+          description: |
+            The resource names of the attestors that must attest to a
+            container image. If the attestor is in a different project from the
+            policy, it should be specified in the format `projects/*/attestors/*`.
+          is_set: true
+          diff_suppress_func: 'tpgresource.CompareSelfLinkOrResourceName'
+          set_hash_func: tpgresource.SelfLinkNameHash
+          custom_expand: 'templates/terraform/custom_expand/binaryauthorization_attestors.tmpl'
+          item_type:
+            type: String
+        - name: 'enforcementMode'
+          type: Enum
+          description: |
+            The action when a pod creation is denied by the admission rule.
+          required: true
+          enum_values:
+            - 'ENFORCED_BLOCK_AND_AUDIT_LOG'
+            - 'DRYRUN_AUDIT_LOG_ONLY'
+  - name: 'kubernetesServiceAccountAdmissionRules'
+    type: Map
+    description: |
+      Optional. Per-Kubernetes-service-account admission rules. The key is the
+      service account spec in the format `namespace:serviceaccount`, e.g.
+      `test-ns:default`.
+    is_set: true
+    set_hash_func: |-
+      func(v interface{}) int {
+        raw := v.(map[string]interface{})
+        copy := make((map[string]interface{}))
+        for key, value := range raw {
+          copy[key] = value
+        }
+        at := copy["require_attestations_by"].(*schema.Set)
+        if at != nil {
+          t := tpgresource.ConvertAndMapStringArr(at.List(), tpgresource.GetResourceNameFromSelfLink)
+          copy["require_attestations_by"] = schema.NewSet(tpgresource.SelfLinkNameHash, tpgresource.ConvertStringArrToInterface(t))
+        }
+        var buf bytes.Buffer
+        schema.SerializeResourceForHash(&buf, copy, ResourceBinaryAuthorizationPolicy().Schema["kubernetes_service_account_admission_rules"].Elem.(*schema.Resource))
+        return tpgresource.Hashcode(buf.String())
+      }
+    key_name: 'service_account'
+    value_type:
+      type: NestedObject
+      properties:
+        - name: 'evaluationMode'
+          type: Enum
+          description: How this admission rule will be evaluated.
+          required: true
+          enum_values:
+            - 'ALWAYS_ALLOW'
+            - 'REQUIRE_ATTESTATION'
+            - 'ALWAYS_DENY'
+        - name: 'requireAttestationsBy'
+          type: Array
+          description: |
+            The resource names of the attestors that must attest to a
+            container image.
+          is_set: true
+          diff_suppress_func: 'tpgresource.CompareSelfLinkOrResourceName'
+          set_hash_func: tpgresource.SelfLinkNameHash
+          custom_expand: 'templates/terraform/custom_expand/binaryauthorization_attestors.tmpl'
+          item_type:
+            type: String
+        - name: 'enforcementMode'
+          type: Enum
+          description: |
+            The action when a pod creation is denied by the admission rule.
+          required: true
+          enum_values:
+            - 'ENFORCED_BLOCK_AND_AUDIT_LOG'
+            - 'DRYRUN_AUDIT_LOG_ONLY'
+  - name: 'istioServiceIdentityAdmissionRules'
+    type: Map
+    description: |
+      Optional. Per-istio-service-identity admission rules. The key is the
+      Istio service identity in the format `spiffe://<domain>/ns/<ns>/sa/<sa>`,
+      e.g. `spiffe://example.com/ns/test-ns/sa/default`.
+    is_set: true
+    set_hash_func: |-
+      func(v interface{}) int {
+        raw := v.(map[string]interface{})
+        copy := make((map[string]interface{}))
+        for key, value := range raw {
+          copy[key] = value
+        }
+        at := copy["require_attestations_by"].(*schema.Set)
+        if at != nil {
+          t := tpgresource.ConvertAndMapStringArr(at.List(), tpgresource.GetResourceNameFromSelfLink)
+          copy["require_attestations_by"] = schema.NewSet(tpgresource.SelfLinkNameHash, tpgresource.ConvertStringArrToInterface(t))
+        }
+        var buf bytes.Buffer
+        schema.SerializeResourceForHash(&buf, copy, ResourceBinaryAuthorizationPolicy().Schema["istio_service_identity_admission_rules"].Elem.(*schema.Resource))
+        return tpgresource.Hashcode(buf.String())
+      }
+    key_name: 'service_identity'
+    value_type:
+      type: NestedObject
+      properties:
+        - name: 'evaluationMode'
+          type: Enum
+          description: How this admission rule will be evaluated.
+          required: true
+          enum_values:
+            - 'ALWAYS_ALLOW'
+            - 'REQUIRE_ATTESTATION'
+            - 'ALWAYS_DENY'
+        - name: 'requireAttestationsBy'
+          type: Array
+          description: |
+            The resource names of the attestors that must attest to a
+            container image.
+          is_set: true
+          diff_suppress_func: 'tpgresource.CompareSelfLinkOrResourceName'
+          set_hash_func: tpgresource.SelfLinkNameHash
+          custom_expand: 'templates/terraform/custom_expand/binaryauthorization_attestors.tmpl'
+          item_type:
+            type: String
+        - name: 'enforcementMode'
+          type: Enum
+          description: |
+            The action when a pod creation is denied by the admission rule.
+          required: true
+          enum_values:
+            - 'ENFORCED_BLOCK_AND_AUDIT_LOG'
+            - 'DRYRUN_AUDIT_LOG_ONLY'
   - name: 'defaultAdmissionRule'
     type: NestedObject
     description: |
