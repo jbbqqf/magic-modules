@@ -36,7 +36,9 @@ resource "google_organization_iam_custom_role" "my-custom-role" {
 
 The following arguments are supported:
 
-* `role_id` - (Required) The role id to use for this role.
+* `role_id` - (Optional) The role id to use for this role. Either `role_id` or `role_id_prefix` must be set, but not both. If neither is set, a unique role_id beginning with `tf_` is generated.
+
+* `role_id_prefix` - (Optional) Creates a unique `role_id` beginning with the specified prefix. Conflicts with `role_id`. Must satisfy the `role_id` regex (alphanumeric, underscores and dots, 3-64 chars total including the generated suffix). Useful when several roles need to share a common prefix without collisions.
 
 * `org_id` - (Required) The numeric ID of the organization in which you want to create a custom role.
 

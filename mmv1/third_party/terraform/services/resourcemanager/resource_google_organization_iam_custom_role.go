@@ -3,6 +3,7 @@ package resourcemanager
 import (
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/id"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-google/google/registry"
@@ -35,11 +36,20 @@ func ResourceGoogleOrganizationIamCustomRole() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"role_id": {
-				Type:         schema.TypeString,
-				Required:     true,
-				ForceNew:     true,
-				Description:  `The role id to use for this role.`,
-				ValidateFunc: verify.ValidateIAMCustomRoleID,
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ForceNew:      true,
+				Description:   `The role id to use for this role. Conflicts with role_id_prefix.`,
+				ValidateFunc:  verify.ValidateIAMCustomRoleID,
+				ConflictsWith: []string{"role_id_prefix"},
+			},
+			"role_id_prefix": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				Description:   `Creates a unique role_id beginning with the specified prefix. Conflicts with role_id. Must satisfy the role_id regex (alphanumeric, underscores and dots, 3-64 chars total including the generated suffix).`,
+				ConflictsWith: []string{"role_id"},
 			},
 			"org_id": {
 				Type:        schema.TypeString,
@@ -95,7 +105,20 @@ func resourceGoogleOrganizationIamCustomRoleCreate(d *schema.ResourceData, meta 
 	}
 
 	org := d.Get("org_id").(string)
-	roleId := fmt.Sprintf("organizations/%s/roles/%s", org, d.Get("role_id").(string))
+
+	var roleIdName string
+	if v, ok := d.GetOk("role_id"); ok {
+		roleIdName = v.(string)
+	} else if v, ok := d.GetOk("role_id_prefix"); ok {
+		roleIdName = id.PrefixedUniqueId(v.(string))
+	} else {
+		roleIdName = id.PrefixedUniqueId("tf_")
+	}
+	if err := d.Set("role_id", roleIdName); err != nil {
+		return fmt.Errorf("Error setting role_id: %s", err)
+	}
+
+	roleId := fmt.Sprintf("organizations/%s/roles/%s", org, roleIdName)
 	orgId := fmt.Sprintf("organizations/%s", org)
 
 	// Look for role with given ID.
@@ -118,7 +141,7 @@ func resourceGoogleOrganizationIamCustomRoleCreate(d *schema.ResourceData, meta 
 	} else if err := transport_tpg.HandleNotFoundError(err, d, fmt.Sprintf("Custom Organization Role %q", roleId)); err == nil {
 		// If no role was found, actually create a new role.
 		role, err := iambeta.NewClient(config, userAgent).Organizations.Roles.Create(orgId, &iam.CreateRoleRequest{
-			RoleId: d.Get("role_id").(string),
+			RoleId: roleIdName,
 			Role: &iam.Role{
 				Title:               d.Get("title").(string),
 				Description:         d.Get("description").(string),

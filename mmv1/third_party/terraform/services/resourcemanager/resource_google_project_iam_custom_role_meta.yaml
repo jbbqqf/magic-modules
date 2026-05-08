@@ -10,5 +10,6 @@ fields:
   - field: 'permissions'
   - field: 'project'
   - field: 'role_id'
+  - field: 'role_id_prefix'
   - api_field: 'stage'
   - api_field: 'title'
