@@ -110,6 +110,12 @@ properties:
       the API key never expires. The expiration time can't be updated after it is set.
     default_value: "-1"
     immutable: true
+    # The API accepts this as a duration on create but does not echo it back
+    # on read — it returns the absolute expiration timestamp on the
+    # credential (`credentials[].expiresAt`). Without ignore_read, every plan
+    # diffs the configured duration against a much-larger millisecond
+    # timestamp and force-replaces the resource (#27071).
+    ignore_read: true
   - name: "apiProducts"
     type: Array
     description: |
