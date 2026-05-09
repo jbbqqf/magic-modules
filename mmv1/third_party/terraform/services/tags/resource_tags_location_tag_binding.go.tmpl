@@ -200,6 +200,8 @@ func resourceTagsLocationTagBindingRead(d *schema.ResourceData, meta interface{}
 
 	p, ok := res["tagBindings"]
 	if !ok || p == nil {
+		log.Printf("[DEBUG] Removing TagsLocationTagBinding because the parent has no tag bindings.")
+		d.SetId("")
 		return nil
 	}
 	pView := p.([]interface{})
@@ -227,7 +229,7 @@ func resourceTagsLocationTagBindingRead(d *schema.ResourceData, meta interface{}
 			}
 			v, ok := resp["tagBindings"]
 			if !ok || v == nil {
-				return nil
+				break
 			}
 			pView = append(pView, v.([]interface{})...)
 			if token, ok := res["nextPageToken"]; ok {
@@ -244,6 +246,12 @@ func resourceTagsLocationTagBindingRead(d *schema.ResourceData, meta interface{}
 	res, err = flattenNestedTagsLocationTagBinding(d, meta, newMap)
 	if err != nil {
 		return err
+	}
+
+	if res == nil {
+		log.Printf("[DEBUG] Removing TagsLocationTagBinding because it no longer exists.")
+		d.SetId("")
+		return nil
 	}
 
 	if err := d.Set("name", flattenNestedTagsLocationTagBindingName(res["name"], d, config)); err != nil {
