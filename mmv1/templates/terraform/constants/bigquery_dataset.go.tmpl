@@ -23,7 +23,12 @@ func validateDatasetId(v interface{}, k string) (ws []string, errors []error) {
 
 func validateDefaultTableExpirationMs(v interface{}, k string) (ws []string, errors []error) {
     value := v.(int)
-    if value < 3600000 {
+    // The BigQuery API accepts 0 as a sentinel meaning "clear the default
+    // expiration via PATCH" — see
+    // https://cloud.google.com/bigquery/docs/reference/rest/v2/datasets#Dataset.FIELDS.default_table_expiration_ms
+    // — and config-generation imports (terraform plan -generate-config-out)
+    // can emit 0 for an unset field. Reject only the (0, 3600000) range.
+    if value > 0 && value < 3600000 {
         errors = append(errors, fmt.Errorf("%q cannot be shorter than 3600000 milliseconds (one hour)", k))
     }
 
