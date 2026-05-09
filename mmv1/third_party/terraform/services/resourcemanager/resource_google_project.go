@@ -393,6 +393,14 @@ func resourceGoogleProjectRead(d *schema.ResourceData, meta interface{}) error {
 		if err := d.Set("billing_account", _ba); err != nil {
 			return fmt.Errorf("Error setting billing_account: %s", err)
 		}
+	} else {
+		// Billing has been removed from the project (e.g. the user disabled it
+		// in the Cloud Console). Clear the state attribute so the next plan
+		// surfaces the drift instead of silently keeping the old value. See
+		// https://github.com/hashicorp/terraform-provider-google/issues/23695
+		if err := d.Set("billing_account", ""); err != nil {
+			return fmt.Errorf("Error setting billing_account: %s", err)
+		}
 	}
 
 	return nil
