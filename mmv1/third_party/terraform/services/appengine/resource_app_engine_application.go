@@ -137,6 +137,13 @@ func ResourceAppEngineApplication() *schema.Resource {
 				Computed:    true,
 				Description: `The GCR domain used for storing managed Docker images for this app.`,
 			},
+			"service_account": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
+				Description: `The service account associated with the application. This is the app-level default identity. If no identity provided during create version, Admin API will fallback to this one.`,
+			},
 			"iap": {
 				Type:        schema.TypeList,
 				Optional:    true,
@@ -298,6 +305,9 @@ func resourceAppEngineApplicationRead(d *schema.ResourceData, meta interface{}) 
 	if err := d.Set("gcr_domain", app.GcrDomain); err != nil {
 		return fmt.Errorf("Error setting gcr_domain: %s", err)
 	}
+	if err := d.Set("service_account", app.ServiceAccount); err != nil {
+		return fmt.Errorf("Error setting service_account: %s", err)
+	}
 	if err := d.Set("database_type", app.DatabaseType); err != nil {
 		return fmt.Errorf("Error setting database_type: %s", err)
 	}
@@ -373,13 +383,14 @@ func resourceAppEngineApplicationDelete(d *schema.ResourceData, meta interface{}
 
 func expandAppEngineApplication(d *schema.ResourceData, project string) (*appengine.Application, error) {
 	result := &appengine.Application{
-		AuthDomain:    d.Get("auth_domain").(string),
-		LocationId:    d.Get("location_id").(string),
-		Id:            project,
-		GcrDomain:     d.Get("gcr_domain").(string),
-		DatabaseType:  d.Get("database_type").(string),
-		ServingStatus: d.Get("serving_status").(string),
-		SslPolicy:     d.Get("ssl_policy").(string),
+		AuthDomain:     d.Get("auth_domain").(string),
+		LocationId:     d.Get("location_id").(string),
+		Id:             project,
+		GcrDomain:      d.Get("gcr_domain").(string),
+		DatabaseType:   d.Get("database_type").(string),
+		ServingStatus:  d.Get("serving_status").(string),
+		SslPolicy:      d.Get("ssl_policy").(string),
+		ServiceAccount: d.Get("service_account").(string),
 	}
 	featureSettings, err := expandAppEngineApplicationFeatureSettings(d)
 	if err != nil {
