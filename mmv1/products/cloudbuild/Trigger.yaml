@@ -302,6 +302,7 @@ properties:
             type: Enum
             description: |
               Configure builds to run whether a repository owner or collaborator need to comment `/gcbrun`.
+            diff_suppress_func: 'tpgresource.EmptyOrDefaultStringSuppress("COMMENTS_DISABLED")'
             enum_values:
               - 'COMMENTS_DISABLED'
               - 'COMMENTS_ENABLED'
@@ -502,6 +503,7 @@ properties:
             type: Enum
             description: |
               Whether to block builds on a "/gcbrun" comment from a repository owner or collaborator.
+            diff_suppress_func: 'tpgresource.EmptyOrDefaultStringSuppress("COMMENTS_DISABLED")'
             enum_values:
               - 'COMMENTS_DISABLED'
               - 'COMMENTS_ENABLED'
@@ -580,6 +582,7 @@ properties:
             type: Enum
             description: |
               Configure builds to run whether a repository owner or collaborator need to comment /gcbrun.
+            diff_suppress_func: 'tpgresource.EmptyOrDefaultStringSuppress("COMMENTS_DISABLED")'
             enum_values:
               - 'COMMENTS_DISABLED'
               - 'COMMENTS_ENABLED'
@@ -1314,6 +1317,7 @@ properties:
             type: Enum
             description: |
               Configure builds to run whether a repository owner or collaborator need to comment `/gcbrun`.
+            diff_suppress_func: 'tpgresource.EmptyOrDefaultStringSuppress("COMMENTS_DISABLED")'
             enum_values:
               - 'COMMENTS_DISABLED'
               - 'COMMENTS_ENABLED'
