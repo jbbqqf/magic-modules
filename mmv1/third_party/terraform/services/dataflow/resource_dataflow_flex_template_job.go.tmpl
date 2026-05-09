@@ -795,13 +795,21 @@ func resourceDataflowFlexJobTypeCustomizeDiff(_ context.Context, d *schema.Resou
 	}
 
 	if p, ok := d.GetOk("parameters.enableStreamingEngine"); ok {
-		if d.HasChange("enable_streaming_engine") {
-			e := d.Get("enable_streaming_engine")
-			return fmt.Errorf("Error setting enable_streaming_engine, value is supplied twice: enable_streaming_engine=%t, parameters.enableStreamingEngine=%t", e.(bool), p.(bool))
-		} else {
-			p := d.Get("parameters.enableStreamingEngine")
-			d.SetNew("enable_streaming_engine", p.(string))
+		// parameters is a Map[string]string, so p comes back as a string regardless
+		// of how the user wrote it in HCL. The previous code blindly cast it to
+		// bool, which panicked when users set parameters.enableStreamingEngine =
+		// true (the boolean literal); Terraform stringifies that on the way in but
+		// the diff path expected a bool. Parse explicitly. See #16799.
+		pStr, _ := p.(string)
+		pBool, parseErr := strconv.ParseBool(strings.ToLower(pStr))
+		if parseErr != nil {
+			return fmt.Errorf("parameters.enableStreamingEngine must parse as a boolean, got %q", pStr)
 		}
+		if d.HasChange("enable_streaming_engine") {
+			e, _ := d.Get("enable_streaming_engine").(bool)
+			return fmt.Errorf("Error setting enable_streaming_engine, value is supplied twice: enable_streaming_engine=%t, parameters.enableStreamingEngine=%t", e, pBool)
+		}
+		d.SetNew("enable_streaming_engine", pBool)
 	}
 
 	err = dataflowFlexJobTypeParameterOverride("sdk_container_image", "sdkContainerImage", d)
