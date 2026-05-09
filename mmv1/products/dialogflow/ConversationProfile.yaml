@@ -162,6 +162,12 @@ properties:
                   description: |
                     Enable query suggestion only.
                     This feature is only supported for types: KNOWLEDGE_ASSIST
+                - type: Boolean
+                  name: 'enableResponseDebugInfo'
+                  description: |
+                    Enables response debugging information for the suggestion. When set to true,
+                    debug information about the suggestion response is included in the API
+                    response, which can be useful for troubleshooting suggestion behavior.
                 - type: NestedObject
                   name: 'suggestionTriggerSettings'
                   description: |
@@ -337,6 +343,12 @@ properties:
                   description: |
                     Enable query suggestion only.
                     This feature is only supported for types: KNOWLEDGE_ASSIST
+                - type: Boolean
+                  name: 'enableResponseDebugInfo'
+                  description: |
+                    Enables response debugging information for the suggestion. When set to true,
+                    debug information about the suggestion response is included in the API
+                    response, which can be useful for troubleshooting suggestion behavior.
                 - type: NestedObject
                   name: 'suggestionTriggerSettings'
                   description: |
