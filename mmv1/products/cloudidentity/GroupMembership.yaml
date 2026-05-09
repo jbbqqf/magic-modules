@@ -43,6 +43,9 @@ custom_code:
   post_import: 'templates/terraform/post_import/cloud_identity_group_membership.go.tmpl'
 exclude_sweeper: true
 read_error_transform: 'transformCloudIdentityGroupMembershipReadError'
+error_retry_predicates:
+
+  - 'transport_tpg.IapClient409Operation'
 examples:
   - name: 'cloud_identity_group_membership'
     primary_resource_id: 'cloud_identity_group_membership_basic'
