@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
@@ -12,6 +13,8 @@ import (
 	"github.com/hashicorp/terraform-provider-google/google/registry"
 	transport_tpg "github.com/hashicorp/terraform-provider-google/google/transport"
 )
+
+var ephemeralSecretManagerSecretVersionRegex = regexp.MustCompile("projects/(.+)/secrets/(.+)/versions/(.+)$")
 
 var _ ephemeral.EphemeralResource = &googleEphemeralSecretManagerSecretVersion{}
 
@@ -66,6 +69,7 @@ func (p *googleEphemeralSecretManagerSecretVersion) Schema(ctx context.Context, 
 			"version": schema.StringAttribute{
 				Description: "The version of the secret to get. If it is not provided, the latest version is retrieved.",
 				Optional:    true,
+				Computed:    true,
 			},
 			"is_secret_data_base64": schema.BoolAttribute{
 				Description: "If true, the secret data returned will not get base64 decoded. Defaults to false.",
@@ -193,6 +197,13 @@ func (p *googleEphemeralSecretManagerSecretVersion) Open(ctx context.Context, re
 	data.CreateTime = types.StringValue(versionResp["createTime"].(string))
 	data.Project = types.StringValue(project)
 	data.Enabled = types.BoolValue(true)
+
+	// Resolve `version` from the API response so callers can read the actual
+	// version that was opened (especially when `version` was unset and
+	// `latest` was used).
+	if parts := ephemeralSecretManagerSecretVersionRegex.FindStringSubmatch(versionResp["name"].(string)); len(parts) == 4 {
+		data.Version = types.StringValue(parts[3])
+	}
 
 	if destroyTime, ok := versionResp["destroyTime"]; ok {
 		data.DestroyTime = types.StringValue(destroyTime.(string))
