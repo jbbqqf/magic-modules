@@ -30,4 +30,13 @@ if sv, ok := d.GetOk("send_propagated_connection_limit_if_zero"); ok && sv.(bool
   }
 }
 
+// When connection_preference is ACCEPT_AUTOMATIC, the API rejects PATCH
+// requests that carry consumerAcceptLists or consumerRejectLists (even empty),
+// which blocks flipping ACCEPT_MANUAL -> ACCEPT_AUTOMATIC in-place.
+// See https://github.com/hashicorp/terraform-provider-google/issues/17153
+if cp, ok := d.GetOk("connection_preference"); ok && cp.(string) == "ACCEPT_AUTOMATIC" {
+  delete(obj, "consumerAcceptLists")
+  delete(obj, "consumerRejectLists")
+}
+
 return obj, nil
