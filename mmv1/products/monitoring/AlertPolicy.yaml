@@ -1209,7 +1209,7 @@ properties:
           - 'documentation.0.mime_type'
           - 'documentation.0.subject'
           - 'documentation.0.links'
-        default_value: "text/markdown"
+        default_from_api: true
       - name: 'subject'
         type: String
         description: |
