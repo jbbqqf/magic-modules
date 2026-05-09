@@ -55,6 +55,10 @@ The following arguments are supported:
 
 * `ssl_policy` - (Optional) A list of the SSL policy that will be applied. Each block has a `SSL_POLICY_UNSPECIFIED`, `DEFAULT`, and `MODERN` field.
 
+* `service_account` - (Optional) The service account associated with the application.
+   This is the app-level default identity used by deployed App Engine versions when no per-version
+   identity is supplied. The value cannot be changed after the application is created.
+
 * `feature_settings` - (Optional) A block of optional settings to configure specific App Engine features:
 
   * `split_health_checks` - (Required) Set to false to use the legacy health check instead of the readiness
