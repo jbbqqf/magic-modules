@@ -4,6 +4,7 @@ package resourcemanager
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-provider-google/google/services/serviceusage"
@@ -64,12 +65,21 @@ func resourceProjectServiceIdentityCreate(d *schema.ResourceData, meta interface
 		return err
 	}
 
-	url, err := tpgresource.ReplaceVars(d, config, "{{"{{"}}ServiceUsageBasePath{{"}}"}}projects/{{"{{"}}project{{"}}"}}/services/{{"{{"}}service{{"}}"}}:generateServiceIdentity")
+	project, err := tpgresource.GetProject(d, config)
 	if err != nil {
 		return err
 	}
+	// Allow the user to pass either a bare project id ("my-project") or the
+	// full resource name ("projects/my-project") — the latter is what the
+	// `id` attribute of `data.google_project` returns. Without this strip,
+	// the URL becomes "projects/projects/my-project/services/..." and the
+	// API returns 404.
+	project = strings.TrimPrefix(project, "projects/")
+	if err := d.Set("project", project); err != nil {
+		return fmt.Errorf("Error setting project: %s", err)
+	}
 
-	project, err := tpgresource.GetProject(d, config)
+	url, err := tpgresource.ReplaceVars(d, config, "{{"{{"}}ServiceUsageBasePath{{"}}"}}projects/{{"{{"}}project{{"}}"}}/services/{{"{{"}}service{{"}}"}}:generateServiceIdentity")
 	if err != nil {
 		return err
 	}
