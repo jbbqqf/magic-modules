@@ -226,3 +226,66 @@ properties:
           The statusCode is the only expected/supported filter field. (Ex: statusCode)
           The filter will parse it to the Common Expression Language semantics for expression
           evaluation to build the filter condition. (Ex: "filter": statusCode >= 200 && statusCode < 300 )
+  - name: 'maintenanceUpdatePolicy'
+    type: NestedObject
+    description: |
+      Optional. Customer-preferred MaintenanceUpdatePolicy. Specifies when (day-of-week and
+      time-of-day, in UTC) maintenance can be performed on the instance, and which channel
+      determines the lead time for maintenance notifications.
+    properties:
+      - name: 'maintenanceChannel'
+        type: Enum
+        description: |
+          Maintenance channel to specify relative scheduling for maintenance. Determines how
+          much advance notice is provided before maintenance occurs.
+        enum_values:
+          - 'MAINTENANCE_CHANNEL_UNSPECIFIED'
+          - 'WEEK1'
+          - 'WEEK2'
+      - name: 'maintenanceWindows'
+        type: Array
+        description: |
+          Preferred windows to perform maintenance. Currently limited to 1 window.
+        item_type:
+          type: NestedObject
+          properties:
+            - name: 'day'
+              type: Enum
+              required: true
+              description: |
+                Preferred day of the week for maintenance.
+              enum_values:
+                - 'DAY_OF_WEEK_UNSPECIFIED'
+                - 'MONDAY'
+                - 'TUESDAY'
+                - 'WEDNESDAY'
+                - 'THURSDAY'
+                - 'FRIDAY'
+                - 'SATURDAY'
+                - 'SUNDAY'
+            - name: 'startTime'
+              type: NestedObject
+              required: true
+              description: |
+                The start time (UTC) of the maintenance window.
+              properties:
+                - name: 'hours'
+                  type: Integer
+                  description: |
+                    Hours of a day in 24 hour format. Must be greater than or equal to 0 and
+                    typically must be less than or equal to 23. An API may choose to allow the
+                    value "24:00:00" for scenarios like business closing time.
+                - name: 'minutes'
+                  type: Integer
+                  description: |
+                    Minutes of an hour. Must be greater than or equal to 0 and less than or equal to 59.
+                - name: 'seconds'
+                  type: Integer
+                  description: |
+                    Seconds of a minute. Must be greater than or equal to 0 and typically must be
+                    less than or equal to 59. An API may allow the value 60 if it allows leap-seconds.
+                - name: 'nanos'
+                  type: Integer
+                  description: |
+                    Fractions of seconds, in nanoseconds. Must be greater than or equal to 0 and
+                    less than or equal to 999,999,999.
