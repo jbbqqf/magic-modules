@@ -111,6 +111,12 @@ func ResourceGoogleServiceAccount() *schema.Resource {
 				Computed:    false,
 				Description: `If set to true, skip service account creation if a service account with the same email already exists.`,
 			},
+			"disable_on_destroy": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: `If set to true, the service account will be disabled (instead of deleted) when the resource is destroyed. Useful when other resources still reference the account by member or unique_id and you want a soft offboarding before any final removal. Defaults to false (delete on destroy).`,
+			},
 		},
 		UseJSONNumber: true,
 	}
@@ -272,6 +278,19 @@ func resourceGoogleServiceAccountDelete(d *schema.ResourceData, meta interface{}
 		return err
 	}
 	name := d.Id()
+	if d.Get("disable_on_destroy").(bool) {
+		_, err = iambeta.NewClient(config, userAgent).Projects.ServiceAccounts.Disable(name,
+			&iam.DisableServiceAccountRequest{}).Do()
+		if err != nil {
+			gerr, ok := err.(*googleapi.Error)
+			notFound := ok && gerr.Code == 404
+			if !notFound {
+				return fmt.Errorf("Error disabling service account on destroy: %s", err)
+			}
+		}
+		d.SetId("")
+		return nil
+	}
 	_, err = iambeta.NewClient(config, userAgent).Projects.ServiceAccounts.Delete(name).Do()
 	if err != nil {
 		gerr, ok := err.(*googleapi.Error)
