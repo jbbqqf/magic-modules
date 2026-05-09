@@ -135,7 +135,17 @@ The following arguments are supported:
 * `name` -
   (Required)
   The resource name of the key. The name must be unique within the project, must conform with RFC-1034, is restricted to lower-cased letters, and has a maximum length of 63 characters. In another word, the name must match the regular expression: `[a-z]([a-z0-9-]{0,61}[a-z0-9])?`.
-  
+
+  ~> **Note:** Deleting an API key does not free the name immediately. The
+  [API Keys API](https://cloud.google.com/api-keys/docs/reference/rest/v2/projects.locations.keys/delete)
+  retains a tombstoned record of a deleted key for up to 30 days before purging
+  it permanently, during which time the `name` cannot be reused. Attempting to
+  recreate a key with the same `name` during this window fails with an
+  `ALREADY_EXISTS` (or equivalent) error from the API. Either wait for the
+  purge window to elapse, or use a different `name` (for example one generated
+  by [`random_id`](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id))
+  for the replacement.
+
 
 
 - - -
