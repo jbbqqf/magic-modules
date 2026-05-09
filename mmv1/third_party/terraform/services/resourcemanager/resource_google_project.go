@@ -328,7 +328,15 @@ func resourceGoogleProjectRead(d *schema.ResourceData, meta interface{}) error {
 			return fmt.Errorf("Error setting deletion_policy: %s", err)
 		}
 	}
-	if err := d.Set("project_id", pid); err != nil {
+	// Use the API-canonical project_id (string ID), not whatever the caller
+	// happened to pass to look the project up. Without this, calling the data
+	// source with a project number (e.g. via provider.project = "123456789012")
+	// would store the number in `project_id`, which is meant to be the string ID.
+	canonicalProjectID := p.ProjectId
+	if canonicalProjectID == "" {
+		canonicalProjectID = pid
+	}
+	if err := d.Set("project_id", canonicalProjectID); err != nil {
 		return fmt.Errorf("Error setting project_id: %s", err)
 	}
 	if err := d.Set("number", strconv.FormatInt(p.ProjectNumber, 10)); err != nil {
