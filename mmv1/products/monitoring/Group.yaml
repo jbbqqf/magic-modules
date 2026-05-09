@@ -73,6 +73,14 @@ properties:
       A unique identifier for this group. The format is
       "projects/{project_id_or_number}/groups/{group_id}".
     output: true
+  - name: 'groupId'
+    type: String
+    description: |
+      The short ID of this group, derived from the last segment of `name`.
+      This is the value to use when referencing the group from other
+      Monitoring resources, e.g. `google_monitoring_alert_policy`.
+    output: true
+    custom_flatten: 'templates/terraform/custom_flatten/id_from_name.tmpl'
   - name: 'isCluster'
     type: Boolean
     description: |
