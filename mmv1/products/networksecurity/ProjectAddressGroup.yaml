@@ -60,9 +60,11 @@ properties:
       Name of the AddressGroup resource.
     url_param_only: true
     required: true
+    immutable: true
   - name: 'location'
     type: String
     description: |
       The location of the gateway security policy.
     url_param_only: true
     required: true
+    immutable: true
