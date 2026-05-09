@@ -1204,6 +1204,13 @@ properties:
 
               NOTE this is always enabled for triggered builds and cannot be overridden in the build configuration file.
             send_empty_value: true
+          - name: 'enableStructuredLogging'
+            type: Boolean
+            description: |
+              Option to specify whether structured logging is enabled.
+
+              If true, JSON-formatted logs are parsed as structured logs.
+            send_empty_value: true
           - name: 'logStreamingOption'
             type: Enum
             description: |
