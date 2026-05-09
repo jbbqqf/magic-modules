@@ -392,6 +392,8 @@ properties:
       - 'STANDARD_REPOSITORY'
       - 'VIRTUAL_REPOSITORY'
       - 'REMOTE_REPOSITORY'
+      - 'AOSS_REPOSITORY'
+      - 'ASSURED_OSS_REPOSITORY'
   - name: 'virtualRepositoryConfig'
     type: NestedObject
     description: |-
