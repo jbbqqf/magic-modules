@@ -1,16 +1,41 @@
        if obj["fields"] != nil {
-           // IsEmptyValue() does not work for a boolean as it shows
-           // false when it is 'empty'. Filter boolValue here based on 
-           // the rule api does not take more than 1 'value'
+           // The DataCatalog API rejects a field payload that contains more than
+           // one *value*-typed entry (boolValue / stringValue / doubleValue /
+           // timestampValue / enumValue / richtextValue). Because IsEmptyValue()
+           // treats a Go zero-value bool the same as "unset", we cannot rely on
+           // it for boolValue: a user who explicitly writes `bool_value = false`
+           // would otherwise have it dropped silently. Conversely, if the user
+           // sets bool_value alongside another *value* type we must drop the
+           // bool to avoid an API rejection.
+           //
+           // Bug #16856: we previously dropped boolValue whenever the field map
+           // had more than one entry, which incorrectly fired on metadata-only
+           // companions like `order`, `displayName`, or `fieldName`. Restrict
+           // the strip to the case where at least one OTHER *value*-typed field
+           // is present.
+                valueKeys := map[string]bool{
+                        "boolValue":      true,
+                        "stringValue":    true,
+                        "doubleValue":    true,
+                        "timestampValue": true,
+                        "enumValue":      true,
+                        "richtextValue":  true,
+                }
                 fields := obj["fields"].(map[string]interface{})
                 for _, elements := range fields {
                         values := elements.(map[string]interface{})
-                        if len(values) > 1 {
-                                for val := range values {
-                                        if val == "boolValue" {
-                                                delete(values, "boolValue")
-                                        }
+                        if _, hasBool := values["boolValue"]; !hasBool {
+                                continue
+                        }
+                        otherValuePresent := false
+                        for k := range values {
+                                if k != "boolValue" && valueKeys[k] {
+                                        otherValuePresent = true
+                                        break
                                 }
+                        }
+                        if otherValuePresent {
+                                delete(values, "boolValue")
                         }
                 }
         }
