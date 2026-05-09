@@ -528,6 +528,21 @@ func PubsubTopicProjectNotReady(err error) (bool, string) {
 	return false, ""
 }
 
+// Bigtable returns a 400 with "Parent table ... is either creating or deleting"
+// when a SchemaBundle Read happens before the parent table's create operation
+// has fully propagated. The schema bundle itself was created successfully;
+// retrying the Read works once the table flips to ready.
+// See https://github.com/hashicorp/terraform-provider-google/issues/25463
+func BigtableSchemaBundleParentTableNotReady(err error) (bool, string) {
+	if gerr, ok := err.(*googleapi.Error); ok {
+		if gerr.Code == 400 && strings.Contains(gerr.Body, "is either creating or deleting") {
+			log.Printf("[DEBUG] Dismissed error as a retryable operation: %s", err)
+			return true, "Waiting for Bigtable parent table to finish creating before reading schema bundle"
+		}
+	}
+	return false, ""
+}
+
 // Retry on comon googleapi error codes for retryable errors.
 // TODO: #5609 This may not need to be applied globally - figure out
 // what retryable error codes apply to which API.
