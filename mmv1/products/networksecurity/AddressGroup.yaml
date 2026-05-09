@@ -86,6 +86,7 @@ parameters:
       Name of the AddressGroup resource.
     url_param_only: true
     required: true
+    immutable: true
   - name: 'location'
     type: String
     description: |
@@ -93,6 +94,7 @@ parameters:
       The default value is `global`.
     url_param_only: true
     required: true
+    immutable: true
 properties:
   - name: 'description'
     type: String
