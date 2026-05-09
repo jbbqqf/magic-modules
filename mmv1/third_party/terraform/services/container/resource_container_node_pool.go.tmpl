@@ -514,7 +514,11 @@ var schemaNodePool = map[string]*schema.Schema{
 		Optional:    true,
 		Computed:    true,
 		ForceNew:    true,
-		Description: `Creates a unique name for the node pool beginning with the specified prefix. Conflicts with name.`,
+		// The full node pool name is constructed as name_prefix + a 26-character
+		// suffix (id.UniqueIDSuffixLength). The GKE node pool name limit is 40
+		// characters, so name_prefix must be at most 40 - 26 = 14 characters.
+		ValidateFunc: validation.StringLenBetween(0, 40-id.UniqueIDSuffixLength),
+		Description:  `Creates a unique name for the node pool beginning with the specified prefix. Conflicts with name. The full name (name_prefix + 26-char unique suffix) must be at most 40 characters, so name_prefix is limited to 14 characters.`,
 	},
 
 	"node_config": schemaNodeConfig(),
