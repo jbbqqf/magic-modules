@@ -26,7 +26,7 @@ if v, ok := res["authEnabled"].(bool); ok {
 			billingProject = bp
 		}
 
-		res, err := transport_tpg.SendRequest(transport_tpg.SendRequestOptions{
+		authRes, err := transport_tpg.SendRequest(transport_tpg.SendRequestOptions{
 			Config: config,
 			Method: "GET",
 			Project: billingProject,
@@ -34,10 +34,16 @@ if v, ok := res["authEnabled"].(bool); ok {
 			UserAgent: userAgent,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("Error reading AuthString: %s", err)
-		}
-
-		if err := d.Set("auth_string", res["authString"]); err != nil {
+			// Reading the auth string requires the redis.instances.getAuthString
+			// permission, which is broader than the redis.instances.get permission
+			// needed to plan/read the instance itself. To allow plans from
+			// least-privilege accounts (e.g. roles/viewer), don't fail the Read
+			// when the auth string is unreadable; just clear the value.
+			log.Printf("[WARN] Unable to fetch authString for redis instance (auth_enabled=true): %s", err)
+			if err := d.Set("auth_string", ""); err != nil {
+				return nil, fmt.Errorf("Error reading Instance: %s", err)
+			}
+		} else if err := d.Set("auth_string", authRes["authString"]); err != nil {
 			return nil, fmt.Errorf("Error reading Instance: %s", err)
 		}
 	}
