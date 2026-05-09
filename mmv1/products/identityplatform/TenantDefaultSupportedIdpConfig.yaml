@@ -89,6 +89,7 @@ properties:
     description: |
       OAuth client secret
     required: true
+    sensitive: true
   - name: 'enabled'
     type: Boolean
     description: |
