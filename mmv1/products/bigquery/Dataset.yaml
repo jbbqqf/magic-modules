@@ -324,7 +324,11 @@ properties:
     type: Integer
     description: |
       The default lifetime of all tables in the dataset, in milliseconds.
-      The minimum value is 3600000 milliseconds (one hour).
+      The minimum value is 3600000 milliseconds (one hour). A value of 0
+      is also accepted and means "no default expiration"; this matches the
+      BigQuery REST API, which uses 0 as a sentinel to clear the field via
+      a PATCH request and is what `terraform plan -generate-config-out`
+      emits for an unset value.
       Once this property is set, all newly-created tables in the dataset
       will have an `expirationTime` property set to the creation time plus
       the value in this property, and changing the value will only affect
